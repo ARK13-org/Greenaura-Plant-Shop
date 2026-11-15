@@ -65,20 +65,25 @@ class _RootPageState extends State<RootPage> {
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: AnimatedBottomNavigationBar(
-        splashColor: Constant.darkGreen,
-        activeColor: Constant.darkGreen,
-        backgroundColor: Constant.background,
-        inactiveColor: Colors.grey.withValues(alpha: 0.7),
-        gapLocation: GapLocation.center,
-        notchSmoothness: NotchSmoothness.smoothEdge,
-        icons: icons,
-        activeIndex: bottomIndex,
-        onTap: (int index) {
-          setState(() {
-            bottomIndex = index;
-          });
-        },
+      bottomNavigationBar: Container(
+        color: Constant.white,
+        child: AnimatedBottomNavigationBar(
+          elevation: 5,
+          splashColor: Constant.darkGreen,
+          activeColor: Constant.darkGreen,
+          backgroundColor: Constant.white,
+          inactiveColor: Colors.grey.withValues(alpha: 0.7),
+          gapLocation: GapLocation.center,
+          notchSmoothness: NotchSmoothness.smoothEdge,
+          borderColor: Constant.gray.withValues(alpha: 0.5),
+          icons: icons,
+          activeIndex: bottomIndex,
+          onTap: (int index) {
+            setState(() {
+              bottomIndex = index;
+            });
+          },
+        ),
       ),
     );
   }
