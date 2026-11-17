@@ -12,6 +12,9 @@ class Plant {
   final String decription;
   bool isSelected;
 
+  // Cart quantity
+  int quantity;
+
   Plant({
     required this.plantId,
     required this.price,
@@ -25,10 +28,10 @@ class Plant {
     required this.isFavorated,
     required this.decription,
     required this.isSelected,
+    this.quantity = 0,
   });
 
-  //List of Plants data
-
+  // List of Plants data
   static List<Plant> plantList = [
     Plant(
       plantId: 0,
@@ -158,17 +161,13 @@ class Plant {
     ),
   ];
 
-  //Get the favorated items
+  // Get favorite items
   static List<Plant> getFavoritedPlants() {
-    List<Plant> travelList = Plant.plantList;
-    return travelList.where((element) => element.isFavorated == true).toList();
+    return plantList.where((plant) => plant.isFavorated).toList();
   }
 
-  //Get the cart items
+  // Get cart items
   static List<Plant> addedToCartPlants() {
-    List<Plant> selectedPlants = Plant.plantList;
-    return selectedPlants
-        .where((element) => element.isSelected == true)
-        .toList();
+    return plantList.where((plant) => plant.quantity > 0).toList();
   }
 }

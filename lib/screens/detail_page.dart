@@ -285,6 +285,15 @@ class _DetailPageState extends State<DetailPage> {
                               height: 50,
                               child: ElevatedButton(
                                 onPressed: () {
+                                  setState(() {
+                                    plant.quantity++;
+                                  });
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Plant added to cart!'),
+                                    ),
+                                  );
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
