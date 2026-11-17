@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'GreenAura App',
-      home: HomePage(),
+      home: SplashScreen(),
     );
   }
 }

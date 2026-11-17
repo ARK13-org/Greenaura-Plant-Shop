@@ -9,7 +9,7 @@ import 'package:pant_app/screens/profile_page.dart';
 import 'package:pant_app/screens/scan_page.dart';
 
 class RootPage extends StatefulWidget {
-  const new({super.key});
+  const RootPage({super.key});
 
   @override
   State<RootPage> createState() => _RootPageState();
@@ -18,71 +18,102 @@ class RootPage extends StatefulWidget {
 class _RootPageState extends State<RootPage> {
   int bottomIndex = 0;
 
-  List<Widget> page = [HomePage(), FavoritePage(), CartPage(), ProfilePage()];
-
-  List<IconData> icons = [
-    Icons.home_outlined,
-    Icons.favorite_outline,
-    Icons.shopping_cart_outlined,
-    Icons.person_2_outlined,
+  final List<Widget> page = [
+    const HomePage(),
+    FavoritePage(),
+    CartPage(),
+    ProfilePage(),
   ];
 
-  List<String> appBarTitle = ['Home', 'Favorite', 'Cart', 'Profile'];
+  final List<IconData> icons = [
+    Icons.home_rounded,
+    Icons.favorite_rounded,
+    Icons.shopping_bag_rounded,
+    Icons.person_rounded,
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        title: Padding(
-          padding: EdgeInsets.only(top: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                appBarTitle[bottomIndex],
-                style: TextStyle(fontWeight: FontWeight.bold),
+      backgroundColor: Constant.background,
+
+      // MAIN CONTENT
+      body: IndexedStack(index: bottomIndex, children: page),
+
+      // CENTER SCAN BUTTON
+      floatingActionButton: Container(
+        height: 62,
+        width: 62,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Constant.darkGreen,
+          border: Border.all(color: Constant.background, width: 5),
+          boxShadow: [
+            BoxShadow(
+              color: Constant.darkGreen.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          elevation: 0,
+          backgroundColor: Constant.darkGreen,
+          shape: const CircleBorder(),
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageTransition(
+                type: PageTransitionType.bottomToTop,
+                child: ScanPage(),
               ),
-              Icon(Icons.notifications_none, color: Constant.black, size: 28),
-            ],
+            );
+          },
+          child: Image.asset(
+            'assets/images/code-scan-two.png',
+            height: 27,
+            color: Constant.white,
           ),
         ),
-        backgroundColor: Constant.white,
       ),
-      body: IndexedStack(index: bottomIndex, children: page),
-      floatingActionButton: FloatingActionButton(
-        shape: CircleBorder(),
-        backgroundColor: Constant.darkGreen,
-        child: Image.asset('assets/images/code-scan-two.png', height: 30),
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageTransition(
-              type: PageTransitionType.bottomToTop,
-              child: ScanPage(),
-            ),
-          );
-        },
-      ),
+
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // BOTTOM NAVIGATION
       bottomNavigationBar: Container(
-        color: Constant.white,
-        child: AnimatedBottomNavigationBar(
-          elevation: 5,
-          splashColor: Constant.darkGreen,
-          activeColor: Constant.darkGreen,
-          backgroundColor: Constant.white,
-          inactiveColor: Colors.grey.withValues(alpha: 0.7),
-          gapLocation: GapLocation.center,
-          notchSmoothness: NotchSmoothness.smoothEdge,
-          borderColor: Constant.gray.withValues(alpha: 0.5),
-          icons: icons,
-          activeIndex: bottomIndex,
-          onTap: (int index) {
-            setState(() {
-              bottomIndex = index;
-            });
-          },
+        decoration: BoxDecoration(
+          color: Constant.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: Constant.darkGreen.withValues(alpha: 0.07),
+              blurRadius: 15,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: AnimatedBottomNavigationBar(
+            icons: icons,
+            activeIndex: bottomIndex,
+            onTap: (index) {
+              setState(() {
+                bottomIndex = index;
+              });
+            },
+            backgroundColor: Constant.white,
+            activeColor: Constant.darkGreen,
+            inactiveColor: Constant.gray.withValues(alpha: 0.65),
+            splashColor: Constant.softGreen,
+            elevation: 0,
+            gapLocation: GapLocation.center,
+            notchSmoothness: NotchSmoothness.smoothEdge,
+            height: 65,
+            iconSize: 25,
+            leftCornerRadius: 24,
+            rightCornerRadius: 24,
+          ),
         ),
       ),
     );
