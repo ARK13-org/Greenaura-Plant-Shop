@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Constant.white,
       body: SingleChildScrollView(
         child: Column(
-          children: [
+          children: <Widget>[
             //Search Box
             Padding(
               padding: const EdgeInsets.only(top: 15),
@@ -47,7 +47,7 @@ class _HomePageState extends State<HomePage> {
                     color: Constant.gray.withValues(alpha: 0.1),
                   ),
                   child: Row(
-                    children: [
+                    children: <Widget>[
                       Icon(Icons.search),
                       Expanded(
                         child: TextField(
@@ -79,7 +79,7 @@ class _HomePageState extends State<HomePage> {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: _plantTypes.length,
-                itemBuilder: (context, index) {
+                itemBuilder: (BuildContext context, int index) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: GestureDetector(
@@ -111,14 +111,17 @@ class _HomePageState extends State<HomePage> {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: _plantList.length,
-                itemBuilder: (context, index) {
+                itemBuilder: (BuildContext context, int index) {
                   return Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
                     child: GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => DetailPage()),
+                          MaterialPageRoute(
+                            builder: (BuildContext context) =>
+                                DetailPage(plantId: _plantList[index].plantId),
+                          ),
                         );
                       },
                       child: Container(
@@ -132,7 +135,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         child: Stack(
-                          children: [
+                          children: <Widget>[
                             Positioned(
                               top: 10,
                               left: 10,
@@ -173,7 +176,7 @@ class _HomePageState extends State<HomePage> {
                                 width: 100,
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    boxShadow: [
+                                    boxShadow: <BoxShadow>[
                                       BoxShadow(
                                         color: Colors.black.withValues(
                                           alpha: 0.1,
@@ -196,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                               left: 9,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                                children: <Widget>[
                                   Text(
                                     _plantList[index].category,
                                     style: TextStyle(
@@ -247,93 +250,103 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-
             // New Plants - Product 2
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 1),
               height: size.height * 0.3,
               child: ListView.builder(
                 itemCount: _plantList.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    height: 80,
-                    width: size.width,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Constant.softGreen.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        width: 1,
-                        color: Constant.gray.withValues(alpha: 0.5),
+                itemBuilder: (BuildContext context, int index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (BuildContext context) =>
+                              DetailPage(plantId: _plantList[index].plantId),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      height: 80,
+                      width: size.width,
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Constant.softGreen.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          width: 1,
+                          color: Constant.gray.withValues(alpha: 0.5),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 75,
-                          height: 70,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 65,
-                                height: 65,
-                                decoration: const BoxDecoration(
-                                  color: Constant.white,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(5),
-                                child: Image.asset(
-                                  _plantList[index].imageURL,
+                      child: Row(
+                        children: <Widget>[
+                          SizedBox(
+                            width: 75,
+                            height: 70,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: <Widget>[
+                                Container(
                                   width: 65,
                                   height: 65,
-                                  fit: BoxFit.contain,
+                                  decoration: const BoxDecoration(
+                                    color: Constant.white,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _plantList[index].category,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black.withValues(alpha: 0.7),
+                                Padding(
+                                  padding: const EdgeInsets.all(5),
+                                  child: Image.asset(
+                                    _plantList[index].imageURL,
+                                    width: 65,
+                                    height: 65,
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                _plantList[index].plantName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Constant.white,
-                          ),
-                          child: Text(
-                            '\$${_plantList[index].price}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Constant.darkGreen,
+                              ],
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  _plantList[index].category,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                                Text(
+                                  _plantList[index].plantName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Constant.white,
+                            ),
+                            child: Text(
+                              '\$${_plantList[index].price}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Constant.darkGreen,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
