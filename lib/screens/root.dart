@@ -99,6 +99,10 @@ class _RootPageState extends State<RootPage> {
             activeIndex: bottomIndex,
             onTap: (index) {
               setState(() {
+                if (index == 1) {
+                  page[1] = FavoritePage(key: UniqueKey());
+                }
+
                 bottomIndex = index;
               });
             },
