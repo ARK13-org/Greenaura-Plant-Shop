@@ -55,3 +55,90 @@ lib/
 ├── const/
 │   └── constant.dart
 │
+├── models/
+│   └── plant.dart
+│
+├── screens/
+│   ├── cart_page.dart
+│   ├── detail_page.dart
+│   ├── favorite_page.dart
+│   ├── home_page.dart
+│   ├── profile_page.dart
+│   ├── root.dart
+│   ├── scan_page.dart
+│   └── splash_screen.dart
+│
+└── main.dart
+
+assets/
+├── images/
+└── screenshots/
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Flutter SDK
+- Dart SDK
+- Android Studio or Visual Studio Code
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/ARK13-org/Greenaura-Plant-Shop.git
+```
+
+2. Navigate to the project directory:
+
+```bash
+cd Greenaura-Plant-Shop
+```
+
+3. Install dependencies:
+
+```bash
+flutter pub get
+```
+
+4. Run the application:
+
+```bash
+flutter run
+```
+
+## 📌 Development Status
+
+- [x] Flutter frontend implementation
+- [x] Application navigation and UI
+- [x] Plant browsing and product details
+- [x] Favorites functionality
+- [x] Shopping cart functionality
+- [x] Local profile management
+- [x] Camera and gallery image selection UI
+- [ ] FastAPI backend development
+- [ ] Flutter and FastAPI integration
+- [ ] Real API-based data management
+
+**Current limitations:**
+
+- Plant data is currently provided through simulated local data.
+- Favorites, cart, and profile functionality use local application state.
+- The plant scanner supports image selection, but automatic plant identification is not implemented yet.
+- Backend integration is not yet complete.
+
+## 🔮 Backend
+
+The backend is being developed separately using **FastAPI**.
+
+The planned integration will replace simulated data with API-based data management and connect the Flutter application to a backend service.
+
+## 👨‍💻 Developer
+
+Developed as a portfolio project to demonstrate Flutter mobile application development, UI design, application architecture, and preparation for backend integration using FastAPI.
+
+---
+
+**GreenAura – Bring Nature Home 🌱**
