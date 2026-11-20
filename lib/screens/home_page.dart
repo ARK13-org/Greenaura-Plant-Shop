@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
 import 'package:pant_app/screens/detail_page.dart';
+import 'package:pant_app/services/plant_api.dart';
+import 'package:pant_app/widgets/plant_image.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,18 +15,57 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int selectedIndex = 0;
   String searchQuery = '';
+  bool _isLoading = true;
+  String? _loadError;
 
   final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _plantTypes = [
-    'All',
-    'Indoor',
-    'Office',
-    'Garden',
-    'Toxic',
-  ];
+  List<String> _plantTypes = ['All'];
 
-  final List<Plant> _plantList = Plant.plantList;
+  List<Plant> get _plantList => Plant.plantList;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
+
+    try {
+      final results = await Future.wait([
+        PlantApi.fetchPlants(),
+        PlantApi.fetchCategories(),
+      ]);
+      final plants = results[0] as List<Plant>;
+      final categories = results[1] as List<Map<String, dynamic>>;
+
+      Plant.plantList = plants;
+      if (!mounted) return;
+      setState(() {
+        _plantTypes = [
+          'All',
+          ...categories
+              .map((category) => category['name']?.toString() ?? '')
+              .where((name) => name.isNotEmpty),
+        ];
+        selectedIndex = 0;
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   List<Plant> get filteredPlants {
     return _plantList.where((plant) {
@@ -59,6 +100,40 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading && Plant.plantList.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_loadError != null && Plant.plantList.isEmpty) {
+      return Scaffold(
+        backgroundColor: Constant.background,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_rounded, size: 48),
+                const SizedBox(height: 12),
+                const Text('Could not connect to GreenAura API',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(_loadError!, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _loadCatalog,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Try again'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final plants = filteredPlants;
 
     return Scaffold(
@@ -434,8 +509,8 @@ class _HomePageState extends State<HomePage> {
                                             ),
                                             child: Padding(
                                               padding: const EdgeInsets.all(8),
-                                              child: Image.asset(
-                                                plant.imageURL,
+                                              child: PlantImage(
+                                                imageUrl: plant.imageURL,
                                                 fit: BoxFit.contain,
                                               ),
                                             ),
@@ -520,7 +595,7 @@ class _HomePageState extends State<HomePage> {
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                '\$${plant.price}',
+                                                '\$${plant.price.toStringAsFixed(0)}',
                                                 style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.bold,
@@ -620,8 +695,8 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(5),
-                                  child: Image.asset(
-                                    plant.imageURL,
+                                  child: PlantImage(
+                                    imageUrl: plant.imageURL,
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -688,7 +763,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   ),
                                   Text(
-                                    '\$${plant.price}',
+                                    '\$${plant.price.toStringAsFixed(0)}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,

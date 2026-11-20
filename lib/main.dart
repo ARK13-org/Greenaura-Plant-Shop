@@ -18,3 +18,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// to run : flutter run -d chrome --web-port 2350

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
 import 'package:pant_app/screens/detail_page.dart';
+import 'package:pant_app/widgets/plant_image.dart';
 
 class FavoritePage extends StatefulWidget {
   const FavoritePage({super.key});
@@ -149,8 +150,8 @@ class _FavoritePageState extends State<FavoritePage> {
                                         ),
                                         child: Padding(
                                           padding: const EdgeInsets.all(9),
-                                          child: Image.asset(
-                                            plant.imageURL,
+                                          child: PlantImage(
+                                            imageUrl: plant.imageURL,
                                             fit: BoxFit.contain,
                                           ),
                                         ),
@@ -230,7 +231,7 @@ class _FavoritePageState extends State<FavoritePage> {
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            '\$${plant.price}',
+                                            '\$${plant.price.toStringAsFixed(0)}',
                                             style: TextStyle(
                                               color: Constant.darkGreen,
                                               fontWeight: FontWeight.bold,

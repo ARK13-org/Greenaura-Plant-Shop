@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
+import 'package:pant_app/widgets/plant_image.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -15,8 +16,8 @@ class _CartPageState extends State<CartPage> {
       Plant.plantList.where((plant) => plant.quantity > 0).toList();
 
   double get subtotal {
-    return cartItems.fold(
-      0,
+    return cartItems.fold<double>(
+      0.0,
       (sum, plant) => sum + (plant.price * plant.quantity),
     );
   }
@@ -139,7 +140,7 @@ class _CartPageState extends State<CartPage> {
             ),
             child: Padding(
               padding: const EdgeInsets.all(8),
-              child: Image.asset(plant.imageURL, fit: BoxFit.contain),
+              child: PlantImage(imageUrl: plant.imageURL, fit: BoxFit.contain),
             ),
           ),
           const SizedBox(width: 13),

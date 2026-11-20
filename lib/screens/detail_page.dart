@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
 import 'package:pant_app/screens/cart_page.dart';
+import 'package:pant_app/widgets/plant_image.dart';
 
 class DetailPage extends StatefulWidget {
   final int plantId;
@@ -17,7 +18,10 @@ class _DetailPageState extends State<DetailPage> {
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    final Plant plant = Plant.plantList[widget.plantId];
+    final Plant plant = Plant.plantList.firstWhere(
+      (item) => item.plantId == widget.plantId,
+      orElse: () => throw StateError('Plant ${widget.plantId} is no longer available.'),
+    );
 
     return Scaffold(
       backgroundColor: Constant.background,
@@ -87,12 +91,11 @@ class _DetailPageState extends State<DetailPage> {
                     ),
 
                     // Plant Image
-                    Image.asset(
-                      plant.imageURL,
+                    PlantImage(
+                      imageUrl: plant.imageURL,
                       width: size.width * 0.8,
                       height: size.height * 0.38,
                       fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
                     ),
                   ],
                 ),
@@ -177,7 +180,7 @@ class _DetailPageState extends State<DetailPage> {
                               const SizedBox(height: 7),
 
                               Text(
-                                '\$${plant.price}',
+                                '\$${plant.price.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   fontSize: 23,
                                   fontWeight: FontWeight.bold,
