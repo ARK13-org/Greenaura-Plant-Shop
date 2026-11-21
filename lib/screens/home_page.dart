@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
@@ -21,6 +22,10 @@ class _HomePageState extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
 
   List<String> _plantTypes = ['All'];
+  List<Map<String, dynamic>> _categories = [];
+  List<Plant>? _remoteResults;
+  Timer? _searchDebounce;
+  int _filterRequestId = 0;
 
   List<Plant> get _plantList => Plant.plantList;
 
@@ -47,6 +52,7 @@ class _HomePageState extends State<HomePage> {
       final categories = results[1] as List<Map<String, dynamic>>;
 
       Plant.plantList = plants;
+      _categories = categories;
       if (!mounted) return;
       setState(() {
         _plantTypes = [
@@ -68,6 +74,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   List<Plant> get filteredPlants {
+    if (_remoteResults != null) return _remoteResults!;
     return _plantList.where((plant) {
       final matchesCategory =
           selectedIndex == 0 ||
@@ -83,8 +90,31 @@ class _HomePageState extends State<HomePage> {
     }).toList();
   }
 
+  Future<void> _reloadFilteredPlants() async {
+    final requestId = ++_filterRequestId;
+    final categoryId = selectedIndex == 0 ? null : _categories.firstWhere(
+      (item) => item['name']?.toString() == _plantTypes[selectedIndex],
+      orElse: () => <String, dynamic>{},
+    )['id'] as int?;
+    if (categoryId == null && searchQuery.trim().isEmpty) {
+      if (mounted) setState(() => _remoteResults = null);
+      return;
+    }
+    try {
+      final results = await PlantApi.fetchPlants(categoryId: categoryId, search: searchQuery);
+      if (mounted && requestId == _filterRequestId) {
+        setState(() => _remoteResults = results);
+      }
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search failed: $error')),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -212,9 +242,12 @@ class _HomePageState extends State<HomePage> {
                           child: TextField(
                             controller: _searchController,
                             onChanged: (value) {
-                              setState(() {
-                                searchQuery = value;
-                              });
+                              setState(() { searchQuery = value; });
+                              _searchDebounce?.cancel();
+                              _searchDebounce = Timer(
+                                const Duration(milliseconds: 300),
+                                _reloadFilteredPlants,
+                              );
                             },
                             decoration: InputDecoration(
                               hintText: 'Search for plants...',
@@ -231,9 +264,8 @@ class _HomePageState extends State<HomePage> {
                           IconButton(
                             onPressed: () {
                               _searchController.clear();
-                              setState(() {
-                                searchQuery = '';
-                              });
+                              setState(() { searchQuery = ''; });
+                              _reloadFilteredPlants();
                             },
                             icon: Icon(
                               Icons.close_rounded,
@@ -388,9 +420,8 @@ class _HomePageState extends State<HomePage> {
 
                       return GestureDetector(
                         onTap: () {
-                          setState(() {
-                            selectedIndex = index;
-                          });
+                          setState(() { selectedIndex = index; });
+                          _reloadFilteredPlants();
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
@@ -536,11 +567,17 @@ class _HomePageState extends State<HomePage> {
                                               ),
                                               child: IconButton(
                                                 padding: EdgeInsets.zero,
-                                                onPressed: () {
-                                                  setState(() {
-                                                    plant.isFavorated =
-                                                        !plant.isFavorated;
-                                                  });
+                                                onPressed: () async {
+                                                  final next = !plant.isFavorated;
+                                                  try {
+                                                    await PlantApi.setFavorite(plant.plantId, next);
+                                                    plant.isFavorated = next;
+                                                    if (mounted) setState(() {});
+                                                  } catch (error) {
+                                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                                      SnackBar(content: Text(error.toString())),
+                                                    );
+                                                  }
                                                 },
                                                 icon: Icon(
                                                   plant.isFavorated
@@ -747,10 +784,17 @@ class _HomePageState extends State<HomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        plant.isFavorated = !plant.isFavorated;
-                                      });
+                                    onTap: () async {
+                                      final next = !plant.isFavorated;
+                                      try {
+                                        await PlantApi.setFavorite(plant.plantId, next);
+                                        plant.isFavorated = next;
+                                        if (mounted) setState(() {});
+                                      } catch (error) {
+                                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(error.toString())),
+                                        );
+                                      }
                                     },
                                     child: Icon(
                                       plant.isFavorated

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
 import 'package:pant_app/screens/cart_page.dart';
+import 'package:pant_app/services/plant_api.dart';
 import 'package:pant_app/widgets/plant_image.dart';
 
 class DetailPage extends StatefulWidget {
@@ -14,11 +15,36 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
+  Plant? _serverPlant;
+  bool _favoriteBusy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlantDetails();
+  }
+
+  Future<void> _loadPlantDetails() async {
+    try {
+      final result = await PlantApi.fetchPlantById(widget.plantId);
+      if (!mounted) return;
+      final matches = Plant.plantList.where((item) => item.plantId == widget.plantId);
+      final existing = matches.isEmpty ? null : matches.first;
+      if (existing != null) {
+        result.isFavorated = existing.isFavorated;
+        result.quantity = existing.quantity;
+      }
+      setState(() => _serverPlant = result);
+    } catch (_) {
+      // The catalogue item remains usable if a detail refresh temporarily fails.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    final Plant plant = Plant.plantList.firstWhere(
+    final Plant plant = _serverPlant ?? Plant.plantList.firstWhere(
       (item) => item.plantId == widget.plantId,
       orElse: () => throw StateError('Plant ${widget.plantId} is no longer available.'),
     );
@@ -59,10 +85,23 @@ class _DetailPageState extends State<DetailPage> {
                     iconColor: plant.isFavorated
                         ? Colors.red
                         : Constant.darkGreen,
-                    onPressed: () {
-                      setState(() {
-                        plant.isFavorated = !plant.isFavorated;
-                      });
+                    onPressed: _favoriteBusy ? () {} : () async {
+                      final next = !plant.isFavorated;
+                      setState(() => _favoriteBusy = true);
+                      try {
+                        await PlantApi.setFavorite(plant.plantId, next);
+                        if (mounted) setState(() {
+                          plant.isFavorated = next;
+                          _favoriteBusy = false;
+                        });
+                      } catch (error) {
+                        if (mounted) {
+                          setState(() => _favoriteBusy = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(error.toString())),
+                          );
+                        }
+                      }
                     },
                   ),
                 ],

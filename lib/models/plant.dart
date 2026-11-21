@@ -30,21 +30,24 @@ class Plant {
   });
 
   static List<Plant> plantList = [];
+  static Set<int> favoritePlantIds = {}; 
 
   factory Plant.fromJson(Map<String, dynamic> json, {required String baseUrl}) {
     final categoryJson = json['category'];
-    final categoryName = categoryJson is Map<String, dynamic>
+    final categoryName = categoryJson is Map
         ? (categoryJson['name']?.toString() ?? 'Uncategorized')
         : 'Uncategorized';
-
     final rawImage = json['image_url']?.toString() ?? '';
-    final resolvedImage = rawImage.startsWith('http://') ||
-            rawImage.startsWith('https://')
+    final resolvedImage = rawImage.startsWith('http://') || rawImage.startsWith('https://')
         ? rawImage
         : '$baseUrl/${rawImage.replaceFirst(RegExp(r'^/+'), '')}';
 
+    final id = (json['id'] as num).toInt();
+    final previousMatches = plantList.where((item) => item.plantId == id);
+    final previous = previousMatches.isEmpty ? null : previousMatches.first;
+
     return Plant(
-      plantId: (json['id'] as num).toInt(),
+      plantId: id,
       price: (json['price'] as num).toDouble(),
       category: categoryName,
       plantName: json['plant_name']?.toString() ?? '',
@@ -53,9 +56,10 @@ class Plant {
       humidity: (json['humidity'] as num?)?.toInt() ?? 0,
       temperature: json['temperature']?.toString() ?? 'Not specified',
       imageURL: resolvedImage,
-      isFavorated: false,
+      isFavorated: favoritePlantIds.contains(id) || (previous?.isFavorated ?? false),
       decription: json['description']?.toString() ?? '',
-      isSelected: false,
+      isSelected: previous?.isSelected ?? false,
+      quantity: previous?.quantity ?? 0,
     );
   }
 

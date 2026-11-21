@@ -3,6 +3,7 @@ import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
 import 'package:pant_app/screens/detail_page.dart';
 import 'package:pant_app/widgets/plant_image.dart';
+import 'package:pant_app/services/plant_api.dart';
 
 class FavoritePage extends StatefulWidget {
   const FavoritePage({super.key});
@@ -12,6 +13,26 @@ class FavoritePage extends StatefulWidget {
 }
 
 class _FavoritePageState extends State<FavoritePage> {
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    if (!PlantApi.isAuthenticated) return;
+    setState(() => _loading = true);
+    try {
+      await PlantApi.refreshFavorites();
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   List<Plant> get favoritePlants {
     return Plant.plantList.where((plant) => plant.isFavorated).toList();
   }
@@ -95,7 +116,9 @@ class _FavoritePageState extends State<FavoritePage> {
 
             // FAVORITE GRID OR EMPTY STATE
             Expanded(
-              child: favorites.isEmpty
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : favorites.isEmpty
                   ? _emptyState()
                   : GridView.builder(
                       padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
@@ -178,10 +201,15 @@ class _FavoritePageState extends State<FavoritePage> {
                                           ),
                                           child: IconButton(
                                             padding: EdgeInsets.zero,
-                                            onPressed: () {
-                                              setState(() {
-                                                plant.isFavorated = false;
-                                              });
+                                            onPressed: () async {
+                                              try {
+                                                await PlantApi.setFavorite(plant.plantId, false);
+                                                if (mounted) setState(() {});
+                                              } catch (error) {
+                                                if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text(error.toString())),
+                                                );
+                                              }
                                             },
                                             icon: const Icon(
                                               Icons.favorite_rounded,
@@ -293,7 +321,9 @@ class _FavoritePageState extends State<FavoritePage> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Your favorite plants will appear here. Explore our collection and save the ones you love!',
+              PlantApi.isAuthenticated
+                  ? 'Your favorite plants will appear here. Explore our collection and save the ones you love!'
+                  : 'Sign in from your Profile tab to save favorites to your account and sync them across sessions.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Constant.gray, fontSize: 13, height: 1.6),
             ),
