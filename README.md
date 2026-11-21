@@ -1,79 +1,56 @@
-# 🌿 GreenAura – Plant Shopping App
+# 🌿 GreenAura — Plant Shopping App
 
-**GreenAura** is a Flutter-based mobile application designed to make discovering and shopping for plants simple, enjoyable, and accessible.
-
-With a clean, nature-inspired interface, users can explore different plants, browse categories, view detailed product information, save their favorite plants, and manage their shopping cart.
-
-The Flutter frontend is complete and currently uses simulated data. A **FastAPI backend** is being developed as the next stage of the project.
+GreenAura is a Flutter-based plant shopping application connected to a FastAPI backend. It provides a clean, nature-inspired shopping experience where users can discover plants, explore categories, view product details, manage favorites, and personalize their profiles.
 
 ## ✨ Features
 
-- **Onboarding:** Introduction to the GreenAura application.
-- **Home Page:** Browse plants, explore categories, and search for products.
-- **Plant Details:** View plant descriptions, prices, ratings, sizes, humidity, and temperature information.
-- **Favorites:** Add plants to or remove plants from your favorites.
-- **Shopping Cart:** Add and remove products, update quantities, and calculate subtotals and totals.
-- **Profile:** View and edit basic profile information.
-- **Plant Scanner UI:** Select plant images using the camera or gallery.
-- **Navigation:** Navigate between application sections using a custom bottom navigation bar.
+- **Plant Catalogue:** Browse plants retrieved from the FastAPI backend.
+- **Search & Categories:** Search for plants and filter them by category.
+- **Plant Details:** View descriptions, prices, ratings, sizes, humidity, and temperature information.
+- **Authentication:** Register, log in, and maintain an authenticated session.
+- **Favorites:** Save and remove favorite plants with user-specific backend persistence.
+- **User Profile:** View and update account information.
+- **Profile Pictures:** Upload profile pictures from the gallery.
+- **Shopping Cart:** Add plants, manage quantities, and calculate totals.
+- **Plant Scanner UI:** Select plant images using the gallery or camera.
 
-## 📱 Application Screenshots
+## 📱 Screenshots
 
 ### Onboarding
 
-| Splash Screen 1 | Splash Screen 2 | Splash Screen 3 |
+| Welcome | Discover | Get Started |
 |:---:|:---:|:---:|
-| ![Splash Screen 1](assets/screenshots/splash_one.png) | ![Splash Screen 2](assets/screenshots/splash_two.png) | ![Splash Screen 3](assets/screenshots/splash_three.png) |
+| ![Onboarding 1](assets/screenshots/splash_one.png) | ![Onboarding 2](assets/screenshots/splash_two.png) | ![Onboarding 3](assets/screenshots/splash_three.png) |
 
 ### Main Application
 
-| Home Page | Plant Details |
+| Home | Plant Details |
 |:---:|:---:|
-| ![Home Page](assets/screenshots/home_page.png) | ![Plant Details](assets/screenshots/detaile_page.png) |
+| ![Home](assets/screenshots/home_page.png) | ![Plant Details](assets/screenshots/detaile_page.png) |
 
 | Favorites | Shopping Cart |
 |:---:|:---:|
-| ![Favorites](assets/screenshots/favorited_page.png) | ![Shopping Cart](assets/screenshots/cart_page.png) |
+| ![Favorites](assets/screenshots/favorited_page.png) | ![Cart](assets/screenshots/cart_page.png) |
 
-| Profile |
-|:---:|
-| ![Profile](assets/screenshots/profile_page.png) |
+![Profile](assets/screenshots/profile_page.png)
 
 ## 🛠️ Technologies Used
 
-- **Flutter** – Cross-platform mobile application development.
-- **Dart** – Programming language.
-- **Material Design** – User interface components.
-- **Image Picker** – Camera and gallery image selection.
-- **Animated Bottom Navigation Bar** – Navigation experience.
-- **Page Transition** – Screen transition animations.
+- Flutter
+- Dart
+- FastAPI
+- REST API
+- HTTP
+- Shared Preferences
+- Image Picker
+- Material Design
+- SQLite (backend database)
 
-## 📂 Project Structure
+## 🔗 Related Repository
 
-```text
-lib/
-├── const/
-│   └── constant.dart
-│
-├── models/
-│   └── plant.dart
-│
-├── screens/
-│   ├── cart_page.dart
-│   ├── detail_page.dart
-│   ├── favorite_page.dart
-│   ├── home_page.dart
-│   ├── profile_page.dart
-│   ├── root.dart
-│   ├── scan_page.dart
-│   └── splash_screen.dart
-│
-└── main.dart
+The backend is maintained separately:
 
-assets/
-├── images/
-└── screenshots/
-```
+[GreenAura Plant Shop API](https://github.com/ARK13-org/Greenaura-Plant-Shop-Api)
 
 ## 🚀 Getting Started
 
@@ -81,7 +58,8 @@ assets/
 
 - Flutter SDK
 - Dart SDK
-- Android Studio or Visual Studio Code
+- Visual Studio Code or Android Studio
+- GreenAura FastAPI backend
 
 ### Installation
 
@@ -103,42 +81,38 @@ cd Greenaura-Plant-Shop
 flutter pub get
 ```
 
-4. Run the application:
+4. Start the FastAPI backend by following its README instructions.
+
+5. Run the Flutter application in Chrome:
 
 ```bash
-flutter run
+flutter run -d chrome --web-port 2350
 ```
 
-## 📌 Development Status
+The default API address is `http://127.0.0.1:8000`.
 
-- [x] Flutter frontend implementation
-- [x] Application navigation and UI
-- [x] Plant browsing and product details
-- [x] Favorites functionality
-- [x] Shopping cart functionality
-- [x] Local profile management
-- [x] Camera and gallery image selection UI
-- [ ] FastAPI backend development
-- [ ] Flutter and FastAPI integration
-- [ ] Real API-based data management
+## 📌 Project Status
 
-**Current limitations:**
+The Flutter application and FastAPI integration are implemented and tested.
 
-- Plant data is currently provided through simulated local data.
-- Favorites, cart, and profile functionality use local application state.
-- The plant scanner supports image selection, but automatic plant identification is not implemented yet.
-- Backend integration is not yet complete.
+### Current Scope
 
-## 🔮 Backend
+- Plant catalogue and category management through the API.
+- User registration and authentication.
+- Profile management and profile-picture uploads.
+- Persistent, user-specific favorites.
+- Local shopping cart functionality.
 
-The backend is being developed separately using **FastAPI**.
+### Current Limitations
 
-The planned integration will replace simulated data with API-based data management and connect the Flutter application to a backend service.
+- Shopping cart checkout and payment processing are not implemented.
+- Automatic plant identification is not implemented; the scanner currently supports image selection.
+- The application is configured for local backend development and has not been deployed.
 
 ## 👨‍💻 Developer
 
-Developed as a portfolio project to demonstrate Flutter mobile application development, UI design, application architecture, and preparation for backend integration using FastAPI.
+Developed as a portfolio project to demonstrate Flutter application development, REST API integration, backend communication, and full-stack application development.
 
 ---
 
-**GreenAura – Bring Nature Home 🌱**
+**GreenAura — Bring Nature Home 🌱**
