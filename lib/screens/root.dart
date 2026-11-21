@@ -99,7 +99,13 @@ class _RootPageState extends State<RootPage> {
             activeIndex: bottomIndex,
             onTap: (index) {
               setState(() {
+                if (index == 0) {
+                  // Reload HomePage when returning to Home.
+                  page[0] = HomePage(key: UniqueKey());
+                }
+
                 if (index == 1) {
+                  // Reload Favorites whenever its tab is opened.
                   page[1] = FavoritePage(key: UniqueKey());
                 }
 

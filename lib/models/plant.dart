@@ -57,8 +57,7 @@ class Plant {
       humidity: (json['humidity'] as num?)?.toInt() ?? 0,
       temperature: json['temperature']?.toString() ?? 'Not specified',
       imageURL: resolvedImage,
-      isFavorated:
-          favoritePlantIds.contains(id) || (previous?.isFavorated ?? false),
+      isFavorated: favoritePlantIds.contains(id),
       decription: json['description']?.toString() ?? '',
       isSelected: previous?.isSelected ?? false,
       quantity: previous?.quantity ?? 0,

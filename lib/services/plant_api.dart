@@ -275,16 +275,33 @@ class PlantApi {
   }
 
   static Future<List<Plant>> refreshFavorites() async {
-    if (!isAuthenticated) return [];
+    if (!isAuthenticated) {
+      Plant.favoritePlantIds.clear();
+
+      for (final plant in Plant.plantList) {
+        plant.isFavorated = false;
+      }
+
+      return [];
+    }
+
     final response = await _client
         .get(
           ApiConfig.uri('user/me/favorites'),
           headers: _headers(authenticated: true),
         )
         .timeout(const Duration(seconds: 15));
+
     _check(response, 'Could not load favorites');
+
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! List) return [];
+
+    if (decoded is! List) {
+      throw const ApiException(
+        'The favorites endpoint returned an invalid response.',
+      );
+    }
+
     final favorites = decoded
         .map(
           (item) => Plant.fromJson(
@@ -293,11 +310,22 @@ class PlantApi {
           ),
         )
         .toList();
+
     final ids = favorites.map((plant) => plant.plantId).toSet();
+
+    // Update the source of truth.
     Plant.favoritePlantIds = ids;
+
+    // Synchronize the main catalog.
     for (final plant in Plant.plantList) {
       plant.isFavorated = ids.contains(plant.plantId);
     }
+
+    // Ensure returned favorite objects also have the correct state.
+    for (final plant in favorites) {
+      plant.isFavorated = true;
+    }
+
     return favorites;
   }
 

@@ -150,6 +150,10 @@ class _ProfilePageState extends State<ProfilePage> {
       text: PlantApi.currentUser?['email']?.toString() ?? userEmail,
     );
 
+    final phoneController = TextEditingController(
+      text: PlantApi.currentUser?['phone_number']?.toString() ?? '',
+    );
+
     try {
       await showDialog<void>(
         context: context,
@@ -195,6 +199,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                      filled: true,
+                      fillColor: Constant.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -210,15 +229,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 onPressed: () async {
                   final name = nameController.text.trim();
                   final email = emailController.text.trim();
+                  final phone = phoneController.text.trim();
 
-                  if (name.isEmpty || email.isEmpty) {
-                    return;
-                  }
+                  if (name.isEmpty || email.isEmpty) return;
 
                   try {
                     final updated = await PlantApi.updateProfile(
                       name: name,
                       email: email,
+                      phoneNumber: phone,
                     );
 
                     if (!mounted || !dialogContext.mounted) return;
@@ -259,6 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
     } finally {
       nameController.dispose();
       emailController.dispose();
+      phoneController.dispose();
     }
   }
 
@@ -290,7 +310,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       _menuItem(
                         icon: Icons.person_outline_rounded,
                         title: 'Personal Information',
-                        subtitle: 'Your name and email address',
+                        subtitle: 'Your name, email and phone number',
                         onTap: _editProfile,
                       ),
                       _divider(),

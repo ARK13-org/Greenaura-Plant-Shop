@@ -13,8 +13,12 @@ class FavoritePage extends StatefulWidget {
 }
 
 class _FavoritePageState extends State<FavoritePage> {
-  bool _loading = false;
+  bool _loading = true;
+  List<Plant> _favorites = [];
+
   final Set<int> _removingFavorites = {};
+
+  ScaffoldMessengerState? _messenger;
 
   @override
   void initState() {
@@ -22,31 +26,52 @@ class _FavoritePageState extends State<FavoritePage> {
     _loadFavorites();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Capture the messenger only after inherited dependencies are available.
+    _messenger = ScaffoldMessenger.of(context);
+  }
+
   Future<void> _loadFavorites() async {
-    if (!PlantApi.isAuthenticated) return;
+    if (!PlantApi.isAuthenticated) {
+      if (!mounted) return;
 
-    setState(() => _loading = true);
+      setState(() {
+        _favorites = [];
+        _loading = false;
+      });
+      return;
+    }
 
-    final messenger = ScaffoldMessenger.of(context);
+    if (mounted) {
+      setState(() => _loading = true);
+    }
 
     try {
-      await PlantApi.refreshFavorites();
+      final favorites = await PlantApi.refreshFavorites();
 
       if (!mounted) return;
+
+      setState(() {
+        _favorites = favorites;
+        _loading = false;
+      });
     } catch (error) {
       if (!mounted) return;
 
-      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      setState(() {
+        _loading = false;
+      });
+
+      _messenger?.showSnackBar(
+        SnackBar(content: Text('Could not load favorites: $error')),
+      );
     }
   }
 
-  List<Plant> get favoritePlants {
-    return Plant.plantList.where((plant) => plant.isFavorated).toList();
-  }
+  List<Plant> get favoritePlants => _favorites;
 
   Future<void> _openDetails(Plant plant) async {
     await Navigator.push(
@@ -56,13 +81,11 @@ class _FavoritePageState extends State<FavoritePage> {
 
     if (!mounted) return;
 
-    setState(() {});
+    await _loadFavorites();
   }
 
   Future<void> _removeFavorite(Plant plant) async {
     if (_removingFavorites.contains(plant.plantId)) return;
-
-    final messenger = ScaffoldMessenger.of(context);
 
     setState(() {
       _removingFavorites.add(plant.plantId);
@@ -74,6 +97,7 @@ class _FavoritePageState extends State<FavoritePage> {
       if (!mounted) return;
 
       setState(() {
+        _favorites.removeWhere((item) => item.plantId == plant.plantId);
         _removingFavorites.remove(plant.plantId);
       });
     } catch (error) {
@@ -83,7 +107,9 @@ class _FavoritePageState extends State<FavoritePage> {
         _removingFavorites.remove(plant.plantId);
       });
 
-      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+      _messenger?.showSnackBar(
+        SnackBar(content: Text('Could not remove favorite: $error')),
+      );
     }
   }
 
@@ -172,6 +198,7 @@ class _FavoritePageState extends State<FavoritePage> {
                           ),
                       itemBuilder: (context, index) {
                         final plant = favorites[index];
+
                         final isRemoving = _removingFavorites.contains(
                           plant.plantId,
                         );
