@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pant_app/const/constant.dart';
 import 'package:pant_app/models/plant.dart';
@@ -48,12 +49,15 @@ class _HomePageState extends State<HomePage> {
         PlantApi.fetchPlants(),
         PlantApi.fetchCategories(),
       ]);
+
       final plants = results[0] as List<Plant>;
       final categories = results[1] as List<Map<String, dynamic>>;
 
       Plant.plantList = plants;
       _categories = categories;
+
       if (!mounted) return;
+
       setState(() {
         _plantTypes = [
           'All',
@@ -66,6 +70,7 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (error) {
       if (!mounted) return;
+
       setState(() {
         _loadError = error.toString();
         _isLoading = false;
@@ -75,6 +80,7 @@ class _HomePageState extends State<HomePage> {
 
   List<Plant> get filteredPlants {
     if (_remoteResults != null) return _remoteResults!;
+
     return _plantList.where((plant) {
       final matchesCategory =
           selectedIndex == 0 ||
@@ -92,23 +98,56 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _reloadFilteredPlants() async {
     final requestId = ++_filterRequestId;
-    final categoryId = selectedIndex == 0 ? null : _categories.firstWhere(
-      (item) => item['name']?.toString() == _plantTypes[selectedIndex],
-      orElse: () => <String, dynamic>{},
-    )['id'] as int?;
+    final messenger = ScaffoldMessenger.of(context);
+
+    final categoryId = selectedIndex == 0
+        ? null
+        : _categories.firstWhere(
+                (item) =>
+                    item['name']?.toString() == _plantTypes[selectedIndex],
+                orElse: () => <String, dynamic>{},
+              )['id']
+              as int?;
+
     if (categoryId == null && searchQuery.trim().isEmpty) {
-      if (mounted) setState(() => _remoteResults = null);
+      if (mounted) {
+        setState(() => _remoteResults = null);
+      }
       return;
     }
+
     try {
-      final results = await PlantApi.fetchPlants(categoryId: categoryId, search: searchQuery);
-      if (mounted && requestId == _filterRequestId) {
-        setState(() => _remoteResults = results);
-      }
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Search failed: $error')),
+      final results = await PlantApi.fetchPlants(
+        categoryId: categoryId,
+        search: searchQuery,
       );
+
+      if (!mounted || requestId != _filterRequestId) return;
+
+      setState(() => _remoteResults = results);
+    } catch (error) {
+      if (!mounted || requestId != _filterRequestId) return;
+
+      messenger.showSnackBar(SnackBar(content: Text('Search failed: $error')));
+    }
+  }
+
+  Future<void> _toggleFavorite(Plant plant) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final next = !plant.isFavorated;
+
+    try {
+      await PlantApi.setFavorite(plant.plantId, next);
+
+      if (!mounted) return;
+
+      setState(() {
+        plant.isFavorated = next;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
@@ -131,9 +170,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading && Plant.plantList.isEmpty) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_loadError != null && Plant.plantList.isEmpty) {
@@ -147,8 +184,10 @@ class _HomePageState extends State<HomePage> {
               children: [
                 const Icon(Icons.cloud_off_rounded, size: 48),
                 const SizedBox(height: 12),
-                const Text('Could not connect to GreenAura API',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Could not connect to GreenAura API',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Text(_loadError!, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
@@ -242,7 +281,11 @@ class _HomePageState extends State<HomePage> {
                           child: TextField(
                             controller: _searchController,
                             onChanged: (value) {
-                              setState(() { searchQuery = value; });
+                              setState(() {
+                                searchQuery = value;
+                                _remoteResults = null;
+                              });
+
                               _searchDebounce?.cancel();
                               _searchDebounce = Timer(
                                 const Duration(milliseconds: 300),
@@ -264,7 +307,12 @@ class _HomePageState extends State<HomePage> {
                           IconButton(
                             onPressed: () {
                               _searchController.clear();
-                              setState(() { searchQuery = ''; });
+
+                              setState(() {
+                                searchQuery = '';
+                                _remoteResults = null;
+                              });
+
                               _reloadFilteredPlants();
                             },
                             icon: Icon(
@@ -285,8 +333,6 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 const SizedBox(height: 27),
-
-                // FEATURE BANNER
 
                 // FEATURE BANNER
                 Padding(
@@ -420,7 +466,11 @@ class _HomePageState extends State<HomePage> {
 
                       return GestureDetector(
                         onTap: () {
-                          setState(() { selectedIndex = index; });
+                          setState(() {
+                            selectedIndex = index;
+                            _remoteResults = null;
+                          });
+
                           _reloadFilteredPlants();
                         },
                         child: AnimatedContainer(
@@ -461,7 +511,7 @@ class _HomePageState extends State<HomePage> {
 
                 const SizedBox(height: 27),
 
-                // FEATURED PLANTS TITLE
+                // POPULAR PLANTS TITLE
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 22),
                   child: Row(
@@ -567,18 +617,8 @@ class _HomePageState extends State<HomePage> {
                                               ),
                                               child: IconButton(
                                                 padding: EdgeInsets.zero,
-                                                onPressed: () async {
-                                                  final next = !plant.isFavorated;
-                                                  try {
-                                                    await PlantApi.setFavorite(plant.plantId, next);
-                                                    plant.isFavorated = next;
-                                                    if (mounted) setState(() {});
-                                                  } catch (error) {
-                                                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(content: Text(error.toString())),
-                                                    );
-                                                  }
-                                                },
+                                                onPressed: () =>
+                                                    _toggleFavorite(plant),
                                                 icon: Icon(
                                                   plant.isFavorated
                                                       ? Icons.favorite_rounded
@@ -784,18 +824,7 @@ class _HomePageState extends State<HomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   GestureDetector(
-                                    onTap: () async {
-                                      final next = !plant.isFavorated;
-                                      try {
-                                        await PlantApi.setFavorite(plant.plantId, next);
-                                        plant.isFavorated = next;
-                                        if (mounted) setState(() {});
-                                      } catch (error) {
-                                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text(error.toString())),
-                                        );
-                                      }
-                                    },
+                                    onTap: () => _toggleFavorite(plant),
                                     child: Icon(
                                       plant.isFavorated
                                           ? Icons.favorite_rounded

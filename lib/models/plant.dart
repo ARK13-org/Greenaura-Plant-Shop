@@ -30,7 +30,7 @@ class Plant {
   });
 
   static List<Plant> plantList = [];
-  static Set<int> favoritePlantIds = {}; 
+  static Set<int> favoritePlantIds = {};
 
   factory Plant.fromJson(Map<String, dynamic> json, {required String baseUrl}) {
     final categoryJson = json['category'];
@@ -38,7 +38,8 @@ class Plant {
         ? (categoryJson['name']?.toString() ?? 'Uncategorized')
         : 'Uncategorized';
     final rawImage = json['image_url']?.toString() ?? '';
-    final resolvedImage = rawImage.startsWith('http://') || rawImage.startsWith('https://')
+    final resolvedImage =
+        rawImage.startsWith('http://') || rawImage.startsWith('https://')
         ? rawImage
         : '$baseUrl/${rawImage.replaceFirst(RegExp(r'^/+'), '')}';
 
@@ -56,7 +57,8 @@ class Plant {
       humidity: (json['humidity'] as num?)?.toInt() ?? 0,
       temperature: json['temperature']?.toString() ?? 'Not specified',
       imageURL: resolvedImage,
-      isFavorated: favoritePlantIds.contains(id) || (previous?.isFavorated ?? false),
+      isFavorated:
+          favoritePlantIds.contains(id) || (previous?.isFavorated ?? false),
       decription: json['description']?.toString() ?? '',
       isSelected: previous?.isSelected ?? false,
       quantity: previous?.quantity ?? 0,

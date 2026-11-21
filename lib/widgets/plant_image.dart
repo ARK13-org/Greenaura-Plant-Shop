@@ -25,9 +25,8 @@ class PlantImage extends StatelessWidget {
       fit: fit,
       width: width,
       height: height,
-      errorBuilder: (context, error, stackTrace) => const Center(
-        child: Icon(Icons.local_florist_outlined, size: 36),
-      ),
+      errorBuilder: (context, error, stackTrace) =>
+          const Center(child: Icon(Icons.local_florist_outlined, size: 36)),
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         return const Center(

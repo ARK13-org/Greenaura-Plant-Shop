@@ -15,6 +15,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String userName = 'GreenAura Member';
   String userEmail = 'Sign in to sync your account';
   String? profilePicturePath;
+
   bool _profileLoading = false;
   bool _pictureUploading = false;
 
@@ -24,30 +25,41 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadProfile();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _loadProfile() async {
     if (!PlantApi.isAuthenticated) return;
+
     setState(() => _profileLoading = true);
+
     try {
       final user = await PlantApi.getMe();
+
       if (!mounted) return;
+
       setState(() {
         userName = '${user['name'] ?? ''} ${user['last_name'] ?? ''}'.trim();
         userEmail = user['email']?.toString() ?? '';
         profilePicturePath = user['profile_picture']?.toString();
-
-        debugPrint('Profile picture: $profilePicturePath');
       });
+
+      debugPrint('Profile picture: $profilePicturePath');
     } catch (error) {
-      if (mounted) _showMessage(error.toString());
+      if (!mounted) return;
+      _showMessage(error.toString());
     } finally {
-      if (mounted) setState(() => _profileLoading = false);
+      if (mounted) {
+        setState(() => _profileLoading = false);
+      }
     }
   }
 
   String _profilePictureUrl(String path) {
     final trimmedPath = path.trim();
 
-    // Support both absolute URLs and paths returned by the FastAPI backend.
     if (trimmedPath.startsWith('http://') ||
         trimmedPath.startsWith('https://')) {
       return trimmedPath;
@@ -68,20 +80,27 @@ class _ProfilePageState extends State<ProfilePage> {
         imageQuality: 85,
         maxWidth: 1200,
       );
-      if (image == null || !mounted) return;
+
+      if (!mounted || image == null) return;
 
       setState(() => _pictureUploading = true);
+
       final updatedUser = await PlantApi.uploadProfilePicture(image);
+
       if (!mounted) return;
 
       setState(() {
         profilePicturePath = updatedUser['profile_picture']?.toString();
       });
+
       _showMessage('Profile picture updated successfully!');
     } catch (error) {
-      if (mounted) _showMessage(error.toString());
+      if (!mounted) return;
+      _showMessage(error.toString());
     } finally {
-      if (mounted) setState(() => _pictureUploading = false);
+      if (mounted) {
+        setState(() => _pictureUploading = false);
+      }
     }
   }
 
@@ -91,7 +110,12 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierDismissible: false,
       builder: (_) => const _GreenAuraAuthDialog(),
     );
-    if (result == true) await _loadProfile();
+
+    if (!mounted) return;
+
+    if (result == true) {
+      await _loadProfile();
+    }
   }
 
   int get favoriteCount => Plant.getFavoritedPlants().length;
@@ -100,6 +124,8 @@ class _ProfilePageState extends State<ProfilePage> {
       Plant.addedToCartPlants().fold(0, (sum, plant) => sum + plant.quantity);
 
   void _showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -110,106 +136,130 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _editProfile() {
+  Future<void> _editProfile() async {
+    if (!PlantApi.isAuthenticated) {
+      await _showAuthDialog();
+      return;
+    }
+
     final nameController = TextEditingController(
       text: PlantApi.currentUser?['name']?.toString() ?? userName,
     );
+
     final emailController = TextEditingController(
       text: PlantApi.currentUser?['email']?.toString() ?? userEmail,
     );
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: Constant.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: const Text(
-            'Edit Profile',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    filled: true,
-                    fillColor: Constant.background,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: Constant.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            title: const Text(
+              'Edit Profile',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Full Name',
+                      prefixIcon: const Icon(Icons.person_outline),
+                      filled: true,
+                      fillColor: Constant.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    filled: true,
-                    fillColor: Constant.background,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'Email Address',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      filled: true,
+                      fillColor: Constant.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey.shade600),
+                ],
               ),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.trim().isEmpty ||
-                    emailController.text.trim().isEmpty) {
-                  return;
-                }
-                try {
-                  final updated = await PlantApi.updateProfile(
-                    name: nameController.text.trim(),
-                    email: emailController.text.trim(),
-                  );
-                  if (!mounted) return;
-                  setState(() {
-                    userName =
-                        '${updated['name'] ?? ''} ${updated['last_name'] ?? ''}'
-                            .trim();
-                    userEmail = updated['email']?.toString() ?? '';
-                  });
-                  Navigator.pop(dialogContext);
-                  _showMessage('Profile updated successfully!');
-                } catch (error) {
-                  if (mounted) _showMessage(error.toString());
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constant.darkGreen,
-                foregroundColor: Constant.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
               ),
-              child: const Text('Save Changes'),
-            ),
-          ],
-        );
-      },
-    );
+              ElevatedButton(
+                onPressed: () async {
+                  final name = nameController.text.trim();
+                  final email = emailController.text.trim();
+
+                  if (name.isEmpty || email.isEmpty) {
+                    return;
+                  }
+
+                  try {
+                    final updated = await PlantApi.updateProfile(
+                      name: name,
+                      email: email,
+                    );
+
+                    if (!mounted || !dialogContext.mounted) return;
+
+                    setState(() {
+                      userName =
+                          '${updated['name'] ?? ''} ${updated['last_name'] ?? ''}'
+                              .trim();
+                      userEmail = updated['email']?.toString() ?? '';
+                    });
+
+                    Navigator.pop(dialogContext);
+                    _showMessage('Profile updated successfully!');
+                  } catch (error) {
+                    if (!mounted || !dialogContext.mounted) return;
+
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text(error.toString()),
+                        backgroundColor: Colors.red.shade700,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Constant.darkGreen,
+                  foregroundColor: Constant.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Save Changes'),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      nameController.dispose();
+      emailController.dispose();
+    }
   }
 
   @override
@@ -221,7 +271,12 @@ class _ProfilePageState extends State<ProfilePage> {
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              _profileHeader(),
+              _profileLoading
+                  ? const Padding(
+                      padding: EdgeInsets.only(top: 50, bottom: 50),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : _profileHeader(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 25, 20, 30),
                 child: Column(
@@ -229,7 +284,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     _statistics(),
                     const SizedBox(height: 30),
-
                     _sectionTitle('MY ACCOUNT'),
                     const SizedBox(height: 13),
                     _menuCard([
@@ -237,9 +291,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         icon: Icons.person_outline_rounded,
                         title: 'Personal Information',
                         subtitle: 'Your name and email address',
-                        onTap: PlantApi.isAuthenticated
-                            ? _editProfile
-                            : _showAuthDialog,
+                        onTap: _editProfile,
                       ),
                       _divider(),
                       _menuItem(
@@ -258,7 +310,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             _showMessage('Your orders will appear here.'),
                       ),
                     ]),
-
                     const SizedBox(height: 27),
                     _sectionTitle('PREFERENCES'),
                     const SizedBox(height: 13),
@@ -279,7 +330,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             _showMessage('Language settings coming soon!'),
                       ),
                     ]),
-
                     const SizedBox(height: 27),
                     _sectionTitle('MORE'),
                     const SizedBox(height: 13),
@@ -298,11 +348,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         onTap: _showAbout,
                       ),
                     ]),
-
                     const SizedBox(height: 25),
                     _logoutButton(),
                     const SizedBox(height: 25),
-
                     Center(
                       child: Column(
                         children: [
@@ -342,7 +390,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Profile Header
   Widget _profileHeader() {
     return Stack(
       clipBehavior: Clip.none,
@@ -404,9 +451,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 30),
-
                   Container(
                     width: 105,
                     height: 105,
@@ -462,9 +507,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   TextButton.icon(
                     onPressed: _pictureUploading
                         ? null
@@ -497,9 +540,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     userName,
                     maxLines: 1,
@@ -510,9 +551,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     userEmail,
                     style: TextStyle(
@@ -520,9 +559,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       fontSize: 12,
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 13,
@@ -552,9 +589,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   SizedBox(
                     height: 43,
                     child: OutlinedButton.icon(
@@ -601,7 +636,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Statistics
   Widget _statistics() {
     return Row(
       children: [
@@ -675,7 +709,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Section Title
   Widget _sectionTitle(String title) {
     return Row(
       children: [
@@ -701,7 +734,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Menu Card
   Widget _menuCard(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
@@ -782,9 +814,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Logout
   Widget _logoutButton() {
     final signedIn = PlantApi.isAuthenticated;
+
     return SizedBox(
       width: double.infinity,
       height: 54,
@@ -792,16 +824,24 @@ class _ProfilePageState extends State<ProfilePage> {
         onPressed: () async {
           if (!signedIn) {
             await _showAuthDialog();
-          } else {
+            return;
+          }
+
+          try {
             await PlantApi.logout();
-            if (mounted) {
-              setState(() {
-                userName = 'GreenAura Member';
-                userEmail = 'Sign in to sync your account';
-                profilePicturePath = null;
-              });
-              _showMessage('You have been logged out.');
-            }
+
+            if (!mounted) return;
+
+            setState(() {
+              userName = 'GreenAura Member';
+              userEmail = 'Sign in to sync your account';
+              profilePicturePath = null;
+            });
+
+            _showMessage('You have been logged out.');
+          } catch (error) {
+            if (!mounted) return;
+            _showMessage(error.toString());
           }
         },
         icon: Icon(
@@ -810,7 +850,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         label: Text(
           signedIn ? 'Log Out' : 'Sign In / Create Account',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
         ),
         style: OutlinedButton.styleFrom(
           foregroundColor: signedIn ? Colors.red.shade400 : Constant.darkGreen,
@@ -829,7 +869,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // About
   void _showAbout() {
     showAboutDialog(
       context: context,
@@ -854,6 +893,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
 class _GreenAuraAuthDialog extends StatefulWidget {
   const _GreenAuraAuthDialog();
+
   @override
   State<_GreenAuraAuthDialog> createState() => _GreenAuraAuthDialogState();
 }
@@ -866,6 +906,7 @@ class _GreenAuraAuthDialogState extends State<_GreenAuraAuthDialog> {
   final _lastName = TextEditingController();
   final _phone = TextEditingController();
   final _email = TextEditingController();
+
   bool _register = false;
   bool _busy = false;
   bool _obscure = true;
@@ -883,7 +924,9 @@ class _GreenAuraAuthDialogState extends State<_GreenAuraAuthDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _busy = true);
+
     try {
       if (_register) {
         await PlantApi.register(
@@ -895,19 +938,25 @@ class _GreenAuraAuthDialogState extends State<_GreenAuraAuthDialog> {
           password: _password.text,
         );
       }
+
       await PlantApi.login(_username.text.trim(), _password.text);
-      if (mounted) Navigator.pop(context, true);
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.toString()),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString()),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 

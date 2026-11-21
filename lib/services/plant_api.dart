@@ -50,8 +50,9 @@ class PlantApi {
   }) async {
     final query = <String, String>{};
     if (categoryId != null) query['category_id'] = '$categoryId';
-    if (search != null && search.trim().isNotEmpty)
+    if (search != null && search.trim().isNotEmpty) {
       query['search'] = search.trim();
+    }
     final response = await _client
         .get(
           ApiConfig.uri('plants/', query.isEmpty ? null : query),
@@ -60,10 +61,11 @@ class PlantApi {
         .timeout(const Duration(seconds: 15));
     _check(response, 'Could not load plants');
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! List)
+    if (decoded is! List) {
       throw const ApiException(
         'The plants endpoint returned an invalid response.',
       );
+    }
     final plants = decoded
         .map(
           (item) => Plant.fromJson(
@@ -148,8 +150,9 @@ class PlantApi {
       jsonDecode(utf8.decode(response.bodyBytes)),
     );
     _token = data['access_token']?.toString();
-    if (!isAuthenticated)
+    if (!isAuthenticated) {
       throw const ApiException('The server did not return an access token.');
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, _token!);
     currentUser = await getMe();
@@ -299,8 +302,9 @@ class PlantApi {
   }
 
   static Future<void> setFavorite(int plantId, bool isFavorite) async {
-    if (!isAuthenticated)
+    if (!isAuthenticated) {
       throw const ApiException('Please sign in to save your favorites.');
+    }
     final response = await _client
         .put(
           ApiConfig.uri('plants/$plantId/favorite'),
@@ -333,8 +337,9 @@ class PlantApi {
   static String _errorMessage(http.Response response) {
     try {
       final body = jsonDecode(utf8.decode(response.bodyBytes));
-      if (body is Map && body['detail'] != null)
+      if (body is Map && body['detail'] != null) {
         return body['detail'].toString();
+      }
     } catch (_) {}
     return response.reasonPhrase ?? 'Unknown server error';
   }

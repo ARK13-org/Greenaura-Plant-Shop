@@ -27,27 +27,79 @@ class _DetailPageState extends State<DetailPage> {
   Future<void> _loadPlantDetails() async {
     try {
       final result = await PlantApi.fetchPlantById(widget.plantId);
+
       if (!mounted) return;
-      final matches = Plant.plantList.where((item) => item.plantId == widget.plantId);
+
+      final matches = Plant.plantList.where(
+        (item) => item.plantId == widget.plantId,
+      );
+
       final existing = matches.isEmpty ? null : matches.first;
+
       if (existing != null) {
         result.isFavorated = existing.isFavorated;
         result.quantity = existing.quantity;
       }
+
       setState(() => _serverPlant = result);
     } catch (_) {
-      // The catalogue item remains usable if a detail refresh temporarily fails.
+      // Keep the catalogue item usable if the detail refresh fails.
     }
+  }
+
+  Future<void> _toggleFavorite(Plant plant) async {
+    if (_favoriteBusy) return;
+
+    final next = !plant.isFavorated;
+    final messenger = ScaffoldMessenger.of(context);
+
+    setState(() => _favoriteBusy = true);
+
+    try {
+      await PlantApi.setFavorite(plant.plantId, next);
+
+      if (!mounted) return;
+
+      setState(() {
+        plant.isFavorated = next;
+        _favoriteBusy = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() => _favoriteBusy = false);
+
+      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  void _addToCart(Plant plant) {
+    setState(() {
+      plant.quantity++;
+    });
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Plant added to cart!')));
+
+    _openCart();
+  }
+
+  void _openCart() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => CartPage()));
   }
 
   @override
   Widget build(BuildContext context) {
     final Size size = MediaQuery.of(context).size;
 
-    final Plant plant = _serverPlant ?? Plant.plantList.firstWhere(
-      (item) => item.plantId == widget.plantId,
-      orElse: () => throw StateError('Plant ${widget.plantId} is no longer available.'),
-    );
+    final Plant plant =
+        _serverPlant ??
+        Plant.plantList.firstWhere(
+          (item) => item.plantId == widget.plantId,
+          orElse: () => throw StateError(
+            'Plant ${widget.plantId} is no longer available.',
+          ),
+        );
 
     return Scaffold(
       backgroundColor: Constant.background,
@@ -60,14 +112,10 @@ class _DetailPageState extends State<DetailPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Back Button
                   _circleButton(
                     icon: Icons.arrow_back,
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: () => Navigator.pop(context),
                   ),
-
                   const Text(
                     'Plant Details',
                     style: TextStyle(
@@ -76,8 +124,6 @@ class _DetailPageState extends State<DetailPage> {
                       color: Constant.darkGreen,
                     ),
                   ),
-
-                  // Favorite Button
                   _circleButton(
                     icon: plant.isFavorated
                         ? Icons.favorite
@@ -85,24 +131,9 @@ class _DetailPageState extends State<DetailPage> {
                     iconColor: plant.isFavorated
                         ? Colors.red
                         : Constant.darkGreen,
-                    onPressed: _favoriteBusy ? () {} : () async {
-                      final next = !plant.isFavorated;
-                      setState(() => _favoriteBusy = true);
-                      try {
-                        await PlantApi.setFavorite(plant.plantId, next);
-                        if (mounted) setState(() {
-                          plant.isFavorated = next;
-                          _favoriteBusy = false;
-                        });
-                      } catch (error) {
-                        if (mounted) {
-                          setState(() => _favoriteBusy = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error.toString())),
-                          );
-                        }
-                      }
-                    },
+                    onPressed: _favoriteBusy
+                        ? () {}
+                        : () => _toggleFavorite(plant),
                   ),
                 ],
               ),
@@ -119,7 +150,6 @@ class _DetailPageState extends State<DetailPage> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Background Circle
                     Container(
                       width: size.width * 0.7,
                       height: size.width * 0.7,
@@ -128,8 +158,6 @@ class _DetailPageState extends State<DetailPage> {
                         color: Constant.softGreen.withValues(alpha: 0.4),
                       ),
                     ),
-
-                    // Plant Image
                     PlantImage(
                       imageUrl: plant.imageURL,
                       width: size.width * 0.8,
@@ -160,7 +188,6 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                   ],
                 ),
-
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,9 +207,7 @@ class _DetailPageState extends State<DetailPage> {
                                     color: Constant.gray,
                                   ),
                                 ),
-
                                 const SizedBox(height: 5),
-
                                 Text(
                                   plant.plantName,
                                   style: const TextStyle(
@@ -194,7 +219,6 @@ class _DetailPageState extends State<DetailPage> {
                               ],
                             ),
                           ),
-
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -215,9 +239,7 @@ class _DetailPageState extends State<DetailPage> {
                                   ),
                                 ],
                               ),
-
                               const SizedBox(height: 7),
-
                               Text(
                                 '\$${plant.price.toStringAsFixed(0)}',
                                 style: const TextStyle(
@@ -233,7 +255,6 @@ class _DetailPageState extends State<DetailPage> {
 
                       const SizedBox(height: 20),
 
-                      // PLANT CARE DETAILS
                       const Text(
                         'Plant Information',
                         style: TextStyle(
@@ -241,7 +262,6 @@ class _DetailPageState extends State<DetailPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 12),
 
                       Row(
@@ -253,9 +273,7 @@ class _DetailPageState extends State<DetailPage> {
                               value: plant.size,
                             ),
                           ),
-
                           const SizedBox(width: 10),
-
                           Expanded(
                             child: _detailCard(
                               icon: Icons.water_drop_outlined,
@@ -263,9 +281,7 @@ class _DetailPageState extends State<DetailPage> {
                               value: plant.humidity.toString(),
                             ),
                           ),
-
                           const SizedBox(width: 10),
-
                           Expanded(
                             child: _detailCard(
                               icon: Icons.thermostat,
@@ -278,7 +294,6 @@ class _DetailPageState extends State<DetailPage> {
 
                       const SizedBox(height: 22),
 
-                      // DESCRIPTION
                       const Text(
                         'About Plant',
                         style: TextStyle(
@@ -286,7 +301,6 @@ class _DetailPageState extends State<DetailPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 8),
 
                       Text(
@@ -301,48 +315,21 @@ class _DetailPageState extends State<DetailPage> {
 
                       const SizedBox(height: 25),
 
-                      // BUTTONS
+                      // CART BUTTONS
                       Row(
                         children: [
-                          // CART ICON
                           _circleButton(
                             icon: Icons.shopping_cart_outlined,
                             backgroundColor: Constant.darkGreen,
                             iconColor: Constant.white,
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CartPage(),
-                                ),
-                              );
-                            },
+                            onPressed: _openCart,
                           ),
-
                           const SizedBox(width: 12),
-
-                          // ADD TO CART BUTTON
                           Expanded(
                             child: SizedBox(
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    plant.quantity++;
-                                  });
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Plant added to cart!'),
-                                    ),
-                                  );
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CartPage(),
-                                    ),
-                                  );
-                                },
+                                onPressed: () => _addToCart(plant),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Constant.darkGreen,
                                   foregroundColor: Constant.white,
@@ -412,17 +399,13 @@ class _DetailPageState extends State<DetailPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: Constant.darkGreen, size: 22),
-
           const SizedBox(height: 7),
-
           Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: Constant.gray),
           ),
-
           const SizedBox(height: 3),
-
           Text(
             value,
             textAlign: TextAlign.center,

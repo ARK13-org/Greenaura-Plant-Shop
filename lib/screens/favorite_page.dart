@@ -14,6 +14,7 @@ class FavoritePage extends StatefulWidget {
 
 class _FavoritePageState extends State<FavoritePage> {
   bool _loading = false;
+  final Set<int> _removingFavorites = {};
 
   @override
   void initState() {
@@ -23,13 +24,23 @@ class _FavoritePageState extends State<FavoritePage> {
 
   Future<void> _loadFavorites() async {
     if (!PlantApi.isAuthenticated) return;
+
     setState(() => _loading = true);
+
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
       await PlantApi.refreshFavorites();
+
+      if (!mounted) return;
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      if (!mounted) return;
+
+      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -37,15 +48,43 @@ class _FavoritePageState extends State<FavoritePage> {
     return Plant.plantList.where((plant) => plant.isFavorated).toList();
   }
 
-  void _openDetails(Plant plant) {
-    Navigator.push(
+  Future<void> _openDetails(Plant plant) async {
+    await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => DetailPage(plantId: plant.plantId),
-      ),
-    ).then((_) {
-      if (mounted) setState(() {});
+      MaterialPageRoute(builder: (_) => DetailPage(plantId: plant.plantId)),
+    );
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  Future<void> _removeFavorite(Plant plant) async {
+    if (_removingFavorites.contains(plant.plantId)) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    setState(() {
+      _removingFavorites.add(plant.plantId);
     });
+
+    try {
+      await PlantApi.setFavorite(plant.plantId, false);
+
+      if (!mounted) return;
+
+      setState(() {
+        _removingFavorites.remove(plant.plantId);
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _removingFavorites.remove(plant.plantId);
+      });
+
+      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 
   @override
@@ -133,6 +172,9 @@ class _FavoritePageState extends State<FavoritePage> {
                           ),
                       itemBuilder: (context, index) {
                         final plant = favorites[index];
+                        final isRemoving = _removingFavorites.contains(
+                          plant.plantId,
+                        );
 
                         return GestureDetector(
                           onTap: () => _openDetails(plant),
@@ -201,21 +243,23 @@ class _FavoritePageState extends State<FavoritePage> {
                                           ),
                                           child: IconButton(
                                             padding: EdgeInsets.zero,
-                                            onPressed: () async {
-                                              try {
-                                                await PlantApi.setFavorite(plant.plantId, false);
-                                                if (mounted) setState(() {});
-                                              } catch (error) {
-                                                if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(content: Text(error.toString())),
-                                                );
-                                              }
-                                            },
-                                            icon: const Icon(
-                                              Icons.favorite_rounded,
-                                              color: Colors.redAccent,
-                                              size: 18,
-                                            ),
+                                            onPressed: isRemoving
+                                                ? null
+                                                : () => _removeFavorite(plant),
+                                            icon: isRemoving
+                                                ? const SizedBox(
+                                                    height: 16,
+                                                    width: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.favorite_rounded,
+                                                    color: Colors.redAccent,
+                                                    size: 18,
+                                                  ),
                                           ),
                                         ),
                                       ),
